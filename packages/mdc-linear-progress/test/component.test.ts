@@ -22,13 +22,23 @@
  */
 
 
+import {animationDimensionPercentages as percentages} from '../../mdc-linear-progress/constants';
 import {MDCLinearProgress, MDCLinearProgressFoundation} from '../../mdc-linear-progress/index';
+
+interface WithObserverFoundation {
+  foundation: {observer: null|ResizeObserver},
+}
+
+const roundPixelsToTwoDecimals = (val: string) => {
+  const numberVal = Number(val.split('px')[0]);
+  return Math.floor(numberVal * 100) / 100;
+};
 
 function getFixture() {
   const wrapper = document.createElement('div');
   wrapper.innerHTML = `
     <div role="progressbar" class="mdc-linear-progress" aria-label="Unit Test Progress Bar" aria-valuemin="0"
-      aria-valuemax="1" aria-valuenow="0">
+      aria-valuemax="1" aria-valuenow="0" style="width: 100px">
       <div class="mdc-linear-progress__buffer">
         <div class="mdc-linear-progress__buffer-bar"></div>
         <div class="mdc-linear-progress__buffer-dots"></div>
@@ -46,6 +56,8 @@ function getFixture() {
   return el;
 }
 
+const originalResizeObserver = window.ResizeObserver;
+
 function setupTest() {
   const root = getFixture();
   const component = new MDCLinearProgress(root);
@@ -53,6 +65,10 @@ function setupTest() {
 }
 
 describe('MDCLinearProgress', () => {
+  afterEach(() => {
+    window.ResizeObserver = originalResizeObserver;
+  });
+
   it('attachTo initializes and returns a MDCLinearProgress instance', () => {
     expect(
         MDCLinearProgress.attachTo(getFixture()) instanceof MDCLinearProgress)
@@ -115,5 +131,62 @@ describe('MDCLinearProgress', () => {
 
     component.open();
     expect(root.classList.contains('mdc-linear-progress--closed')).toBeFalsy();
+  });
+
+  it('will not error if there is no resize observer', () => {
+    (window.ResizeObserver as unknown as null) = null;
+    const {component} = setupTest();
+
+    const foundation =
+        (component as unknown as WithObserverFoundation).foundation;
+    const observer = foundation.observer;
+
+    expect(observer).toBeNull();
+  });
+
+  describe('attach to dom', () => {
+    let root: HTMLElement;
+    let component: MDCLinearProgress;
+    beforeEach(() => {
+      const setup = setupTest();
+      root = setup.root;
+      component = setup.component;
+      document.body.appendChild(root);
+    });
+
+    afterEach(() => {
+      document.body.removeChild(root);
+    });
+
+    it('will update size on resize', async () => {
+      component.determinate = false;
+      expect(root.style.width).toBe('100px');
+      await new Promise(requestAnimationFrame);
+      await new Promise(requestAnimationFrame);
+
+      if (window.ResizeObserver) {
+        let actualRounded = roundPixelsToTwoDecimals(
+            root.style.getPropertyValue('--mdc-linear-progress-primary-half'));
+        let expected =
+            roundPixelsToTwoDecimals(`${percentages.PRIMARY_HALF * 100}px`);
+        expect(actualRounded).toEqual(expected);
+
+        root.style.setProperty('width', '200px');
+
+        await new Promise(requestAnimationFrame);
+        // force style recalculation
+        (() => root.offsetWidth)();
+        await new Promise(requestAnimationFrame);
+        await new Promise(requestAnimationFrame);
+
+        expect(root.style.width).toBe('200px');
+
+        actualRounded = roundPixelsToTwoDecimals(
+            root.style.getPropertyValue('--mdc-linear-progress-primary-half'));
+        expected =
+            roundPixelsToTwoDecimals(`${percentages.PRIMARY_HALF * 200}px`);
+        expect(actualRounded).toEqual(expected);
+      }
+    });
   });
 });

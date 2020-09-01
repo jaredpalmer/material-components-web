@@ -28,11 +28,15 @@
  * for more details.
  * https://github.com/material-components/material-components-web/blob/master/docs/code/architecture.md
  */
+
 export interface MDCLinearProgressAdapter {
   addClass(className: string): void;
+  attachResizeObserver(callback: ResizeObserverCallback): ResizeObserver|null;
   forceLayout(): void;
   setBufferBarStyle(styleProperty: string, value: string): void;
   setPrimaryBarStyle(styleProperty: string, value: string): void;
+  setStyle(name: string, value: string): void;
+  getWidth(): number;
   hasClass(className: string): boolean;
   removeClass(className: string): void;
   removeAttribute(name: string): void;
