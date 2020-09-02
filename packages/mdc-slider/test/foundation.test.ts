@@ -1279,7 +1279,7 @@ describe('MDCSliderFoundation', () => {
     });
   });
 
-  describe('change/input events', () => {
+  describe('events: ', () => {
     it('single point slider: fires `input` and `change` events for value changes',
        () => {
          const {foundation, mockAdapter} = setUpAndInit({
@@ -1434,6 +1434,27 @@ describe('MDCSliderFoundation', () => {
          foundation.handleUp(createMouseEvent('mouseup'));
          expect(mockAdapter.emitChangeEvent).not.toHaveBeenCalled();
        });
+
+    it('fires `dragStart`/`dragEnd` events across drag interaction', () => {
+      const {foundation, mockAdapter} = setUpAndInit({
+        valueStart: 20,
+        value: 50,
+        isRange: true,
+        isDiscrete: true,
+      });
+      foundation.handleDown(createMouseEvent('mousedown', {
+        clientX: 20,
+      }));
+      expect(mockAdapter.emitDragStartEvent)
+          .toHaveBeenCalledWith(20, Thumb.START);
+
+      // Move thumb to value 5...
+      foundation.handleMove(createMouseEvent('mousemove', {
+        clientX: 5,
+      }));
+      foundation.handleUp(createMouseEvent('mouseup'));
+      expect(mockAdapter.emitDragEndEvent).toHaveBeenCalledWith(5, Thumb.START);
+    });
   });
 });
 

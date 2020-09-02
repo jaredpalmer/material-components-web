@@ -137,6 +137,8 @@ export class MDCSliderFoundation extends MDCFoundation<MDCSliderAdapter> {
       setPointerCapture: () => undefined,
       emitChangeEvent: () => undefined,
       emitInputEvent: () => undefined,
+      emitDragStartEvent: () => undefined,
+      emitDragEndEvent: () => undefined,
       registerEventHandler: () => undefined,
       deregisterEventHandler: () => undefined,
       registerThumbEventHandler: () => undefined,
@@ -362,6 +364,8 @@ export class MDCSliderFoundation extends MDCFoundation<MDCSliderAdapter> {
     this.thumb = this.getThumbFromDownEvent(clientX, value);
     if (this.thumb === null) return;
 
+    this.adapter.emitDragStartEvent(value, this.thumb);
+
     // Presses within the range do not invoke slider updates.
     const newValueInCurrentRange =
         this.isRange && value >= this.valueStart && value <= this.value;
@@ -386,6 +390,7 @@ export class MDCSliderFoundation extends MDCFoundation<MDCSliderAdapter> {
     if (this.thumb === null) return;
 
     const value = this.mapClientXOnSliderScale(clientX);
+    this.adapter.emitDragStartEvent(value, this.thumb);
     this.updateValue(value, this.thumb, {emitInputEvent: true});
   }
 
@@ -403,6 +408,7 @@ export class MDCSliderFoundation extends MDCFoundation<MDCSliderAdapter> {
       this.adapter.emitChangeEvent(newValue, this.thumb);
     }
 
+    this.adapter.emitDragEndEvent(newValue, this.thumb);
     this.thumb = null;
   }
 
